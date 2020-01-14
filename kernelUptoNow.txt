@@ -1,0 +1,56 @@
+#define IDX(i, j, n) ((i) * (n) + (j))
+__kernel void hello_kernel(__global int *residualFlow,
+						__global int *height,
+						//__global int *result,
+						__global int *excessFlow,
+						__global int *netFlowOutS,
+						__global int *netFlowInT,
+						__global int *s,
+						__global int *t,
+						__global int *n)
+{
+    int gid = get_global_id(0);
+    //int x=*n-1;
+	 while (*netFlowOutS != *netFlowInT) {
+	  //for(int x=1;x<400;x++ )  { 
+        if (gid != *s && gid != *t && excessFlow[gid] > 0) {
+		
+            int curExcess = excessFlow[gid];
+            int curLowestNeighbor = -1;
+            int neighborMinHeight = 10000;
+            for (int v = 0; v < *n; v++) {
+                if (gid == v) continue;
+                if (residualFlow[IDX(gid, v, *n)] > 0) {
+                    int tempHeight = height[v];
+                    if (tempHeight < neighborMinHeight) {
+                        curLowestNeighbor = v;
+                        neighborMinHeight = tempHeight;
+                    }
+                }
+            }
+			//printf("%d  \n",curLowestNeighbor);
+            if (height[gid] > neighborMinHeight) {
+			    //printf("%d  \n",curLowestNeighbor);
+				//printf("hello  \n");
+                int delta = min(curExcess, residualFlow[IDX(gid, curLowestNeighbor, *n)]);
+				//printf("%d  \n",delta);
+                atomic_sub(&residualFlow[IDX(gid, curLowestNeighbor, *n)], delta);
+                atomic_add(&residualFlow[IDX(curLowestNeighbor, gid, *n)], delta);
+                atomic_sub(&excessFlow[gid], delta);
+                atomic_add(&excessFlow[curLowestNeighbor], delta);
+                if (curLowestNeighbor == *s) {
+				    //printf("hello  \n");
+                    atomic_sub(netFlowOutS, delta);
+                } else if (curLowestNeighbor == *t) {
+				    //printf("hello \n");
+                    atomic_add(netFlowInT, delta);
+                }
+            } else {
+                height[gid] = neighborMinHeight + 1;
+            }
+			//printf("%d  \n",height[gid]);
+        }//if 
+		//}//fortest
+
+    }//while 
+}
