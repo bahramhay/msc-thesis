@@ -1,0 +1,16 @@
+//#define x(i,j) ((i)*(j))
+__kernel void hello_kernel(__global int *residualFlow,
+						__global int *height,
+						//__global int *result,
+						__global int *excessFlow,
+						__global int *netFlowOutS,
+						__global int *netFlowInT,
+						__global int *s,
+						__global int *t,
+						__global int *n)
+{
+    //printf("%d  ",a[1]);
+    int gid = get_global_id(0);
+	//*netFlowInT=*netFlowInT+1;
+    residualFlow[gid] = residualFlow[gid]+0;
+}
