@@ -1,0 +1,63 @@
+
+EXECUTABLE := flow_test_seq
+
+#CU_FILES   := pushRelabelGPU.cu
+
+CU_DEPS    :=
+
+CC_FILES   := sequential.cpp cpupar.cpp main.cpp
+
+
+###########################################################
+
+ARCH=$(shell uname | sed -e 's/-.*//g')
+OBJDIR=objs
+CXX=g++ -m64 -std=c++11 -fopenmp
+#CXX=arm-linux-gnueabihf-g++ -std=c++11 
+#CXX=g++ -std=c++11
+CXXFLAGS= -Wall #-O3 -Wall -Wextra -g
+HOSTNAME=$(shell hostname)
+
+LIBS       :=
+FRAMEWORKS :=
+
+NVCCFLAGS=-O3 -m64 --gpu-architecture compute_35
+#LIBS += GL glut cudart 
+LIBS += #libgomp.a
+ifneq ($(wildcard /opt/cuda-8.0/.*),)
+# Latedays
+
+else
+# GHC
+# LDFLAGS=-L/usr/local/cuda/lib64/ -lcudart
+endif
+#LDFLAGS=-L/opt/intelFPGA/18.1/embedded/ds-5/sw/gcc/arm-linux-gnueabihf/lib/arm-linux-gnueabi	
+LDFLAGS=
+LDLIBS  := $(addprefix -l, $(LIBS))
+LDFRAMEWORKS := $(addprefix -framework , $(FRAMEWORKS))
+
+NVCC=nvcc
+
+OBJS=$(OBJDIR)/sequential.o $(OBJDIR)/cpupar.o $(OBJDIR)/main.o
+
+
+.PHONY: dirs clean
+
+default: $(EXECUTABLE)
+
+dirs:
+		mkdir -p $(OBJDIR)/
+
+clean:
+		rm -rf $(OBJDIR) *~ $(EXECUTABLE)
+
+#$(EXECUTABLE): dirs $(OBJS)
+		#$(CXX) $(CXXFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS) $(LDFRAMEWORKS)
+$(EXECUTABLE): 
+		$(CXX) $(CXXFLAGS) main.cpp sequential.cpp timer.cpp cpupar.cpp -I /home/bahram/Desktop/joshTest -o compiled/$@ $(LDFLAGS) $(LDLIBS) $(LDFRAMEWORKS)
+
+$(OBJDIR)/%.o: %.cpp
+		$(CXX) $< $(CXXFLAGS) -c -o $@
+
+$(OBJDIR)/%.o: %.cu
+		$(NVCC) $< $(NVCCFLAGS) -c -o $@
